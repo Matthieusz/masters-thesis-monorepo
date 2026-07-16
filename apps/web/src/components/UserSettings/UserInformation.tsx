@@ -1,7 +1,6 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { UsersService, type UserUpdateMe } from "@/client"
@@ -22,7 +21,7 @@ import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
-  full_name: z.string().max(30).optional(),
+  full_name: z.string().max(30),
   email: z.email({ message: "Invalid email address" }),
 })
 
@@ -34,13 +33,12 @@ const UserInformation = () => {
   const [editMode, setEditMode] = useState(false)
   const { user: currentUser } = useAuth()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
-      full_name: currentUser?.full_name ?? undefined,
-      email: currentUser?.email,
+      full_name: currentUser?.full_name ?? "",
+      email: currentUser?.email ?? "",
     },
   })
 
@@ -61,7 +59,7 @@ const UserInformation = () => {
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  function onSubmit(data: FormData) {
     const updateData: UserUpdateMe = {}
 
     // only include fields that have changed
@@ -85,11 +83,14 @@ const UserInformation = () => {
       <h3 className="text-lg font-semibold py-4">User Information</h3>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={(event) => {
+            event.preventDefault()
+            form.handleSubmit()
+          }}
           className="flex flex-col gap-4"
         >
           <FormField
-            control={form.control}
+            control={form}
             name="full_name"
             render={({ field }) =>
               editMode ? (
@@ -117,7 +118,7 @@ const UserInformation = () => {
           />
 
           <FormField
-            control={form.control}
+            control={form}
             name="email"
             render={({ field }) =>
               editMode ? (
@@ -143,7 +144,7 @@ const UserInformation = () => {
                 <LoadingButton
                   type="submit"
                   loading={mutation.isPending}
-                  disabled={!form.formState.isDirty}
+                  disabled={!form.state.isDirty}
                 >
                   Save
                 </LoadingButton>

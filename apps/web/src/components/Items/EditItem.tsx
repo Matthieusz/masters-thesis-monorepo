@@ -1,8 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { type ItemPublic, ItemsService } from "@/client"
@@ -32,7 +31,7 @@ import { handleError } from "@/utils"
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().optional(),
+  description: z.string(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -47,13 +46,12 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
       title: item.title,
-      description: item.description ?? undefined,
+      description: item.description ?? "",
     },
   })
 
@@ -71,7 +69,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  function onSubmit(data: FormData) {
     mutation.mutate(data)
   }
 
@@ -86,7 +84,12 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              form.handleSubmit()
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Edit Item</DialogTitle>
               <DialogDescription>
@@ -95,7 +98,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
-                control={form.control}
+                control={form}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
@@ -111,7 +114,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="description"
                 render={({ field }) => (
                   <FormItem>

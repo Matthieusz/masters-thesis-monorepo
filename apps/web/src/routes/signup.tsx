@@ -1,10 +1,9 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import {
   createFileRoute,
   Link as RouterLink,
   redirect,
 } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -59,10 +58,9 @@ export const Route = createFileRoute("/signup")({
 
 function SignUp() {
   const { signUpMutation } = useAuth()
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
       email: "",
       full_name: "",
@@ -71,7 +69,7 @@ function SignUp() {
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  function onSubmit(data: FormData) {
     if (signUpMutation.isPending) return
 
     // exclude confirm_password from submission data
@@ -83,7 +81,10 @@ function SignUp() {
     <AuthLayout>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={(event) => {
+            event.preventDefault()
+            form.handleSubmit()
+          }}
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
@@ -92,7 +93,7 @@ function SignUp() {
 
           <div className="grid gap-4">
             <FormField
-              control={form.control}
+              control={form}
               name="full_name"
               render={({ field }) => (
                 <FormItem>
@@ -111,7 +112,7 @@ function SignUp() {
             />
 
             <FormField
-              control={form.control}
+              control={form}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -130,7 +131,7 @@ function SignUp() {
             />
 
             <FormField
-              control={form.control}
+              control={form}
               name="password"
               render={({ field }) => (
                 <FormItem>
@@ -148,7 +149,7 @@ function SignUp() {
             />
 
             <FormField
-              control={form.control}
+              control={form}
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>

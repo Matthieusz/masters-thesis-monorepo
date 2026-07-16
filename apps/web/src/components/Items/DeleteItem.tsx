@@ -1,7 +1,7 @@
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
 
 import { ItemsService } from "@/client"
 import { Button } from "@/components/ui/button"
@@ -28,7 +28,7 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const { handleSubmit } = useForm()
+  const form = useForm({ onSubmit: onSubmit })
 
   const deleteItem = async (id: string) => {
     await ItemsService.deleteItem({ id: id })
@@ -47,7 +47,7 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
     },
   })
 
-  const onSubmit = async () => {
+  async function onSubmit() {
     mutation.mutate(id)
   }
 
@@ -62,7 +62,12 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
         Delete Item
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            form.handleSubmit()
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Delete Item</DialogTitle>
             <DialogDescription>

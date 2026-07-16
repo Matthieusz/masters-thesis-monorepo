@@ -1,100 +1,114 @@
-import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
-import {
-  Controller,
-  FormProvider,
-  useFormContext,
-  useFormState,
-  type ControllerProps,
-  type FieldPath,
-  type FieldValues,
-} from "react-hook-form"
+import type { AnyFieldApi } from "@tanstack/react-form"
+import * as React from "react"
 
-import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
-const Form = FormProvider
-
-type FormFieldContextValue<
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
-  name: TName
+interface FormFieldContextValue {
+  field: AnyFieldApi
 }
 
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
-)
+const FormFieldContext = React.createContext<FormFieldContextValue | null>(null)
 
-const FormField = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->({
-  ...props
-}: ControllerProps<TFieldValues, TName>) => {
+interface FormItemContextValue {
+  id: string
+}
+
+const FormItemContext = React.createContext<FormItemContextValue | null>(null)
+
+/** Compatibility wrapper used while forms share the project's field UI. */
+function Form({ children }: { children?: React.ReactNode }) {
+  return children
+}
+
+interface FormFieldProps {
+  // TanStack Form's React-enhanced form API has a generic Field component whose
+  // full type depends on every validator. This boundary intentionally erases
+  // those generics while each useForm call retains its inferred value type.
+  // SAFETY: every caller passes the form returned by @tanstack/react-form useForm.
+  control: any
+  name: string
+  render: (props: {
+    field: {
+      name: string
+      value: any
+      onBlur: () => void
+      onChange: (value: any) => void
+    }
+    fieldState: { invalid: boolean }
+  }) => React.ReactNode
+}
+
+/** Connects a TanStack Form field to the shared form presentation components. */
+function FormField({ control, name, render }: FormFieldProps) {
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...props} />
-    </FormFieldContext.Provider>
+    <control.Field name={name}>
+      {(field: AnyFieldApi) => (
+        <FormFieldContext.Provider value={{ field }}>
+          {render({
+            field: {
+              name,
+              value: field.state.value,
+              onBlur: field.handleBlur,
+              onChange: (value) => {
+                if (
+                  typeof value === "object" &&
+                  value !== null &&
+                  "target" in value
+                ) {
+                  field.handleChange(value.target.value)
+                  return
+                }
+                field.handleChange(value)
+              },
+            },
+            fieldState: { invalid: field.state.meta.errors.length > 0 },
+          })}
+        </FormFieldContext.Provider>
+      )}
+    </control.Field>
   )
 }
 
-const useFormField = () => {
+function useFormField() {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
-  const { getFieldState } = useFormContext()
-  const formState = useFormState({ name: fieldContext.name })
-  const fieldState = getFieldState(fieldContext.name, formState)
 
-  if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
+  if (!fieldContext || !itemContext) {
+    throw new Error("useFormField must be used within FormField and FormItem")
   }
 
+  const { field } = fieldContext
   const { id } = itemContext
 
   return {
     id,
-    name: fieldContext.name,
+    name: field.name,
     formItemId: `${id}-form-item`,
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
-    ...fieldState,
+    error: field.state.meta.errors[0],
   }
 }
-
-type FormItemContextValue = {
-  id: string
-}
-
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   const id = React.useId()
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div
-        data-slot="form-item"
-        className={cn("grid gap-2", className)}
-        {...props}
-      />
+      <div data-slot="form-item" className={cn("grid gap-2", className)} {...props} />
     </FormItemContext.Provider>
   )
 }
 
-function FormLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField()
-
   return (
     <Label
       data-slot="form-label"
-      data-error={!!error}
+      data-error={Boolean(error)}
       className={cn("data-[error=true]:text-destructive", className)}
       htmlFor={formItemId}
       {...props}
@@ -102,19 +116,14 @@ function FormLabel({
   )
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
+function FormControl(props: React.ComponentProps<typeof Slot>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
-
   return (
     <Slot
       data-slot="form-control"
       id={formItemId}
-      aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={!!error}
+      aria-describedby={error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId}
+      aria-invalid={Boolean(error)}
       {...props}
     />
   )
@@ -122,7 +131,6 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
 
 function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
   const { formDescriptionId } = useFormField()
-
   return (
     <p
       data-slot="form-description"
@@ -135,11 +143,13 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message ?? "") : props.children
+  const body = error
+    ? typeof error === "object" && error !== null && "message" in error
+      ? String(error.message)
+      : String(error)
+    : props.children
 
-  if (!body) {
-    return null
-  }
+  if (!body) return null
 
   return (
     <p
@@ -154,12 +164,12 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
 }
 
 export {
-  useFormField,
   Form,
-  FormItem,
-  FormLabel,
   FormControl,
   FormDescription,
-  FormMessage,
   FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField,
 }

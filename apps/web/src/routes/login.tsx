@@ -1,10 +1,9 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import {
   createFileRoute,
   Link as RouterLink,
   redirect,
 } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import type { Body_login_login_access_token as AccessToken } from "@/client"
@@ -52,17 +51,16 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const { loginMutation } = useAuth()
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
       username: "",
       password: "",
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  function onSubmit(data: FormData) {
     if (loginMutation.isPending) return
     loginMutation.mutate(data)
   }
@@ -71,7 +69,10 @@ function Login() {
     <AuthLayout>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={(event) => {
+            event.preventDefault()
+            form.handleSubmit()
+          }}
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
@@ -80,7 +81,7 @@ function Login() {
 
           <div className="grid gap-4">
             <FormField
-              control={form.control}
+              control={form}
               name="username"
               render={({ field }) => (
                 <FormItem>
@@ -99,7 +100,7 @@ function Login() {
             />
 
             <FormField
-              control={form.control}
+              control={form}
               name="password"
               render={({ field }) => (
                 <FormItem>

@@ -1,8 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { type UserPublic, UsersService } from "@/client"
@@ -34,15 +33,15 @@ import { handleError } from "@/utils"
 const formSchema = z
   .object({
     email: z.email({ message: "Invalid email address" }),
-    full_name: z.string().optional(),
+    full_name: z.string(),
     password: z
       .string()
-      .min(8, { message: "Password must be at least 8 characters" })
-      .optional()
-      .or(z.literal("")),
-    confirm_password: z.string().optional(),
-    is_superuser: z.boolean().optional(),
-    is_active: z.boolean().optional(),
+      .refine((password) => password.length === 0 || password.length >= 8, {
+        message: "Password must be at least 8 characters",
+      }),
+    confirm_password: z.string(),
+    is_superuser: z.boolean(),
+    is_active: z.boolean(),
   })
   .refine((data) => !data.password || data.password === data.confirm_password, {
     message: "The passwords don't match",
@@ -61,21 +60,25 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
       email: user.email,
-      full_name: user.full_name ?? undefined,
-      is_superuser: user.is_superuser,
-      is_active: user.is_active,
+      full_name: user.full_name ?? "",
+      password: "",
+      confirm_password: "",
+      is_superuser: user.is_superuser ?? false,
+      is_active: user.is_active ?? false,
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      UsersService.updateUser({ userId: user.id, requestBody: data }),
+    mutationFn: (
+      data: Omit<FormData, "confirm_password" | "password"> & {
+        password?: string
+      },
+    ) => UsersService.updateUser({ userId: user.id, requestBody: data }),
     onSuccess: () => {
       showSuccessToast("User updated successfully")
       setIsOpen(false)
@@ -87,13 +90,10 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  function onSubmit(data: FormData) {
     // exclude confirm_password from submission data and remove password if empty
-    const { confirm_password: _, ...submitData } = data
-    if (!submitData.password) {
-      delete submitData.password
-    }
-    mutation.mutate(submitData)
+    const { confirm_password: _, password, ...rest } = data
+    mutation.mutate(password ? { ...rest, password } : rest)
   }
 
   return (
@@ -107,7 +107,12 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              form.handleSubmit()
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
               <DialogDescription>
@@ -116,7 +121,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
-                control={form.control}
+                control={form}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -137,7 +142,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="full_name"
                 render={({ field }) => (
                   <FormItem>
@@ -151,7 +156,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
@@ -169,7 +174,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="confirm_password"
                 render={({ field }) => (
                   <FormItem>
@@ -187,7 +192,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="is_superuser"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-3 space-y-0">
@@ -203,7 +208,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="is_active"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-3 space-y-0">

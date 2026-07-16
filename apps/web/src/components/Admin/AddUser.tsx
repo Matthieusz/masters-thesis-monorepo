@@ -1,8 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { type UserCreate, UsersService } from "@/client"
@@ -34,7 +33,7 @@ import { handleError } from "@/utils"
 const formSchema = z
   .object({
     email: z.email({ message: "Invalid email address" }),
-    full_name: z.string().optional(),
+    full_name: z.string(),
     password: z
       .string()
       .min(1, { message: "Password is required" })
@@ -57,10 +56,9 @@ const AddUser = () => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
       email: "",
       full_name: "",
@@ -85,7 +83,7 @@ const AddUser = () => {
     },
   })
 
-  const onSubmit = (data: FormData) => {
+  function onSubmit(data: FormData) {
     mutation.mutate(data)
   }
 
@@ -105,10 +103,15 @@ const AddUser = () => {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              form.handleSubmit()
+            }}
+          >
             <div className="grid gap-4 py-4">
               <FormField
-                control={form.control}
+                control={form}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -129,7 +132,7 @@ const AddUser = () => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="full_name"
                 render={({ field }) => (
                   <FormItem>
@@ -143,7 +146,7 @@ const AddUser = () => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
@@ -164,7 +167,7 @@ const AddUser = () => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="confirm_password"
                 render={({ field }) => (
                   <FormItem>
@@ -186,7 +189,7 @@ const AddUser = () => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="is_superuser"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-3 space-y-0">
@@ -202,7 +205,7 @@ const AddUser = () => {
               />
 
               <FormField
-                control={form.control}
+                control={form}
                 name="is_active"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-3 space-y-0">

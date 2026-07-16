@@ -1,5 +1,5 @@
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
 
 import { UsersService } from "@/client"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,7 @@ import { handleError } from "@/utils"
 const DeleteConfirmation = () => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const { handleSubmit } = useForm()
+  const form = useForm({ onSubmit: onSubmit })
   const { logout } = useAuth()
 
   const mutation = useMutation({
@@ -36,7 +36,7 @@ const DeleteConfirmation = () => {
     },
   })
 
-  const onSubmit = async () => {
+  async function onSubmit() {
     mutation.mutate()
   }
 
@@ -48,7 +48,12 @@ const DeleteConfirmation = () => {
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            form.handleSubmit()
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Confirmation Required</DialogTitle>
             <DialogDescription>

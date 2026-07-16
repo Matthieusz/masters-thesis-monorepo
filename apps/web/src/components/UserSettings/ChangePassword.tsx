@@ -1,6 +1,5 @@
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "@tanstack/react-form"
 import { useMutation } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { type UpdatePassword, UsersService } from "@/client"
@@ -40,10 +39,9 @@ type FormData = z.infer<typeof formSchema>
 
 const ChangePassword = () => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    mode: "onSubmit",
-    criteriaMode: "all",
+  const form = useForm({
+    validators: { onBlur: formSchema },
+    onSubmit: ({ value }) => onSubmit(value),
     defaultValues: {
       current_password: "",
       new_password: "",
@@ -61,7 +59,7 @@ const ChangePassword = () => {
     onError: handleError.bind(showErrorToast),
   })
 
-  const onSubmit = async (data: FormData) => {
+  async function onSubmit(data: FormData) {
     mutation.mutate(data)
   }
 
@@ -70,11 +68,14 @@ const ChangePassword = () => {
       <h3 className="text-lg font-semibold py-4">Change Password</h3>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={(event) => {
+            event.preventDefault()
+            form.handleSubmit()
+          }}
           className="flex flex-col gap-4"
         >
           <FormField
-            control={form.control}
+            control={form}
             name="current_password"
             render={({ field, fieldState }) => (
               <FormItem>
@@ -93,7 +94,7 @@ const ChangePassword = () => {
           />
 
           <FormField
-            control={form.control}
+            control={form}
             name="new_password"
             render={({ field, fieldState }) => (
               <FormItem>
@@ -112,7 +113,7 @@ const ChangePassword = () => {
           />
 
           <FormField
-            control={form.control}
+            control={form}
             name="confirm_password"
             render={({ field, fieldState }) => (
               <FormItem>
