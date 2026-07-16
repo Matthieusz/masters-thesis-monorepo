@@ -39,11 +39,11 @@ The setup is also already configured so you can run the tests through the VS Cod
 
 During development, you can change Docker Compose settings that will only affect the local development environment in the file `compose.override.yml`.
 
-The changes to that file only affect the local development environment, not the production environment. So, you can add "temporary" changes that help the development workflow.
+You can add temporary changes to that file that help the local development workflow.
 
-For example, the directory with the backend code is synchronized in the Docker container, copying the code you change live to the directory inside the container. That allows you to test your changes right away, without having to build the Docker image again. It should only be done during development, for production, you should build the Docker image with a recent version of the backend code. But during development, it allows you to iterate very fast.
+For example, the directory with the backend code is synchronized into the Docker container so you can test changes without rebuilding the image.
 
-There is also a command override that runs `fastapi run --reload` instead of the default `fastapi run`. It starts a single server process (instead of multiple, as would be for production) and reloads the process whenever the code changes. Have in mind that if you have a syntax error and save the Python file, it will break and exit, and the container will stop. After that, you can restart the container by fixing the error and running again:
+There is also a command override that runs `fastapi run --reload` and reloads the process whenever the code changes. Have in mind that if you have a syntax error and save the Python file, it will break and exit, and the container will stop. After that, you can restart the container by fixing the error and running again:
 
 ```console
 $ docker compose watch

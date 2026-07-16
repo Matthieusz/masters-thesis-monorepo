@@ -16,14 +16,12 @@
   - 🤖 An automatically generated frontend client.
   - 🧪 [Playwright](https://playwright.dev) for End-to-End testing.
   - 🦇 Dark mode support.
-- 🐋 [Docker Compose](https://www.docker.com) for development and production.
+- 🐋 [Docker Compose](https://www.docker.com) for local development.
 - 🔒 Secure password hashing by default.
 - 🔑 JWT (JSON Web Token) authentication.
 - 📫 Email based password recovery.
 - ✅ Tests with [Pytest](https://pytest.org).
-- 📞 [Traefik](https://traefik.io) as a reverse proxy / load balancer.
-- 🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
-- 🏭 CI (continuous integration) and CD (continuous deployment) based on GitHub Actions.
+- 🏭 Continuous integration based on GitHub Actions.
 
 ### Dashboard Login
 
@@ -123,15 +121,13 @@ git merge --continue
 
 You can then update configs in the `.env` files to customize your configurations.
 
-Before deploying it, make sure you change at least the values for:
+Before running it, make sure you change at least the values for:
 
 - `SECRET_KEY`
 - `FIRST_SUPERUSER_PASSWORD`
 - `POSTGRES_PASSWORD`
 
 You can (and should) pass these as environment variables from secrets.
-
-Read the [deployment.md](./deployment.md) docs for more details.
 
 ### Generate Secret Keys
 
@@ -212,10 +208,6 @@ Backend docs: [backend/README.md](./backend/README.md).
 ## Frontend Development
 
 Frontend docs: [frontend/README.md](./frontend/README.md).
-
-## Deployment
-
-Deployment docs: [deployment.md](./deployment.md).
 
 ## Development
 
