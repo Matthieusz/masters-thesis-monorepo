@@ -11,20 +11,20 @@ services:
       - fastapi
       - run
       - --reload
-      - "app/main.py"
+      - "src/app/main.py"
     develop:
       watch:
-        - path: ./backend
+        - path: ./apps/api
           action: sync
-          target: /app/backend
+          target: /app/apps/api
           ignore:
-            - ./backend/.venv
+            - ./apps/api/.venv
             - .venv
-        - path: ./backend/pyproject.toml
+        - path: ./apps/api/pyproject.toml
           action: rebuild
     # TODO: remove once coverage is done locally
     volumes:
-      - ./backend/htmlcov:/app/backend/htmlcov
+      - ./apps/api/htmlcov:/app/apps/api/htmlcov
     environment:
       EMAILS_FROM_EMAIL: "noreply@example.com"
 
@@ -34,7 +34,7 @@ services:
   playwright:
     build:
       context: .
-      dockerfile: frontend/Dockerfile.playwright
+      dockerfile: apps/web/Dockerfile.playwright
       args:
         - VITE_API_URL=http://backend:8000
         - NODE_ENV=production
@@ -47,7 +47,7 @@ services:
       - VITE_API_URL=http://backend:8000
       - CI=${CI:-}
     volumes:
-      - ./frontend/blob-report:/app/frontend/blob-report
-      - ./frontend/test-results:/app/frontend/test-results
+      - ./apps/web/blob-report:/app/apps/web/blob-report
+      - ./apps/web/test-results:/app/apps/web/test-results
     ports:
       - "9323:9323"

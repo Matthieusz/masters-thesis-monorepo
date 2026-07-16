@@ -61,8 +61,8 @@ docker compose stop backend
 And then you can run the local development server for the backend:
 
 ```bash
-cd backend
-fastapi dev app/main.py
+cd apps/api
+fastapi dev src/app/main.py
 ```
 
 ## Docker Compose files and env vars
@@ -103,7 +103,7 @@ You can find a file `.pre-commit-config.yaml` with configurations at the root of
 
 After having the `prek` tool installed and available, you need to "install" it in the local repository, so that it runs automatically before each commit.
 
-Using `uv`, you could do it with (make sure you are inside `backend` folder):
+Using `uv`, you could do it with (make sure you are inside `apps/api` folder):
 
 ```bash
 ❯ uv run prek install -f

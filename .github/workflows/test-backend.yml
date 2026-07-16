@@ -30,17 +30,17 @@ jobs:
       - run: docker compose up -d db
       - name: Migrate DB
         run: uv run bash scripts/prestart.sh
-        working-directory: backend
+        working-directory: apps/api
       - name: Run tests
         run: uv run bash scripts/tests-start.sh "Coverage for ${{ github.sha }}"
-        working-directory: backend
+        working-directory: apps/api
       - run: docker compose down -v --remove-orphans
       - name: Store coverage files
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-html
-          path: backend/htmlcov
+          path: apps/api/htmlcov
           include-hidden-files: true
       - name: Coverage report
         run: uv run coverage report --fail-under=90
-        working-directory: backend
+        working-directory: apps/api

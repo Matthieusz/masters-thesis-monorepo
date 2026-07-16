@@ -9,17 +9,17 @@ github-actions = [
 ]
 
 [tool.uv.workspace]
-members = ["backend"]
+members = ["apps/api", "apps/worker", "packages/quantum-routing"]
 
 [tool.typos.files]
 extend-exclude = [
     "img/",
     "uv.lock",
     "bun.lock",
-    "backend/coverage/",
-    "backend/htmlcov/",
-    "frontend/dist/",
-    "frontend/public/assets/images/",
+    "apps/api/coverage/",
+    "apps/api/htmlcov/",
+    "apps/web/dist/",
+    "apps/web/public/assets/images/",
 ]
 
 [tool.typos.default]

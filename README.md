@@ -203,11 +203,11 @@ The input variables, with their default values (some auto generated) are:
 
 ## Backend Development
 
-Backend docs: [backend/README.md](./backend/README.md).
+Backend docs: [apps/api/README.md](./apps/api/README.md).
 
 ## Frontend Development
 
-Frontend docs: [frontend/README.md](./frontend/README.md).
+Frontend docs: [apps/web/README.md](./apps/web/README.md).
 
 ## Development
 
